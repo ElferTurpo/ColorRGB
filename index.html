@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espacios de Color</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .color-box {
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            display: inline-block;
+        }
+        .color-inputs {
+            margin-bottom: 20px;
+        }
+        svg {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Comparar Colores en Espacios de Color</h1>
+    
+    <div class="color-inputs">
+        <label for="color1">Color 1:</label>
+        <input type="color" id="color1" value="#ff0000">
+        
+        <label for="color2">Color 2:</label>
+        <input type="color" id="color2" value="#0000ff">
+    </div>
+    
+    <div>
+        <div class="color-box" id="box1" style="background-color: #ff0000;"></div>
+        <div class="color-box" id="box2" style="background-color: #0000ff;"></div>
+    </div>
+    
+    <h2>Distancia Euclidiana en Espacio RGB</h2>
+    <p id="distance"></p>
+    
+    <h2>Gráfico de Colores en un Plano</h2>
+    <svg width="500" height="500"></svg>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        function hexToRgb(hex) {
+            let bigint = parseInt(hex.slice(1), 16);
+            let r = (bigint >> 16) & 255;
+            let g = (bigint >> 8) & 255;
+            let b = bigint & 255;
+            return [r, g, b];
+        }
+
+        function calculateDistance(color1, color2) {
+            let [r1, g1, b1] = hexToRgb(color1);
+            let [r2, g2, b2] = hexToRgb(color2);
+            let distance = Math.sqrt((r2 - r1) ** 2 + (g2 - g1) ** 2 + (b2 - b1) ** 2);
+            return distance.toFixed(2);
+        }
+
+        function updateColors() {
+            let color1 = document.getElementById('color1').value;
+            let color2 = document.getElementById('color2').value;
+            
+            document.getElementById('box1').style.backgroundColor = color1;
+            document.getElementById('box2').style.backgroundColor = color2;
+            
+            let distance = calculateDistance(color1, color2);
+            document.getElementById('distance').innerText = `La distancia entre los colores es: ${distance}`;
+            
+            updateChart(color1, color2);
+        }
+
+        function updateChart(color1, color2) {
+            let svg = d3.select("svg");
+            svg.selectAll("*").remove();  // Clear previous contents
+
+            let [r1, g1, b1] = hexToRgb(color1);
+            let [r2, g2, b2] = hexToRgb(color2);
+
+            let data = [
+                {color: color1, r: r1, g: g1, b: b1},
+                {color: color2, r: r2, g: g2, b: b2}
+            ];
+
+            let xScale = d3.scaleLinear().domain([0, 255]).range([50, 450]);
+            let yScale = d3.scaleLinear().domain([0, 255]).range([450, 50]);
+
+            let xAxis = d3.axisBottom(xScale);
+            let yAxis = d3.axisLeft(yScale);
+
+            svg.append("g")
+                .attr("transform", "translate(0, 450)")
+                .call(xAxis);
+
+            svg.append("g")
+                .attr("transform", "translate(50, 0)")
+                .call(yAxis);
+
+            svg.selectAll("circle")
+                .data(data)
+                .enter()
+                .append("circle")
+                .attr("cx", d => xScale(d.r))
+                .attr("cy", d => yScale(d.g))
+                .attr("r", 10)
+                .style("fill", d => d.color)
+                .style("stroke", "#000")
+                .style("stroke-width", 2);
+
+            svg.append("line")
+                .attr("x1", xScale(r1))
+                .attr("y1", yScale(g1))
+                .attr("x2", xScale(r2))
+                .attr("y2", yScale(g2))
+                .style("stroke", "black")
+                .style("stroke-width", 2);
+
+            svg.append("text")
+                .attr("x", (xScale(r1) + xScale(r2)) / 2)
+                .attr("y", (yScale(g1) + yScale(g2)) / 2 - 10)
+                .attr("text-anchor", "middle")
+                .style("font-size", "14px")
+                .text(`Distancia: ${calculateDistance(color1, color2)}`);
+        }
+
+        document.getElementById('color1').addEventListener('input', updateColors);
+        document.getElementById('color2').addEventListener('input', updateColors);
+
+        updateColors();
+    </script>
+</body>
+</html>
+ 
